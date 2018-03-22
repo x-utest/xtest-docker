@@ -28,7 +28,7 @@ RUN echo 'export PATH=$NODEJS_HOME/bin:$PATH' >> ~/.noderc
 # front-end
 
 RUN mkdir /www && cd /www && git clone https://github.com/x-utest/xtest-web.git
-ADD config.js /www/xtest-web/src/config.js
+COPY config.js /www/xtest-web/src/config.js
 RUN source ~/.noderc && cd /www/xtest-web && npm install && npm run build
 
 # back-end
@@ -55,12 +55,12 @@ RUN echo 'export PATH=/usr/local/lib/mongodb/mongodb-linux-x86_64-ubuntu1604-$MO
 # RUN source ~/.bashrc
 
 RUN mkdir -p /data/db
-ADD mongodb.conf mongodb.conf
-ADD mongo_admin.sh mongo_admin.sh
-ADD mongo_xtest.sh mongo_xtest.sh
+COPY mongodb.conf mongodb.conf
+# ADD mongo_admin.sh mongo_admin.sh
+# ADD mongo_xtest.sh mongo_xtest.sh
 
-RUN source ~/.mongorc && mongod -f mongodb.conf && sleep 5 \
-    && ./mongo_admin.sh && sleep 2 && ./mongo_xtest.sh && sleep 2
+# RUN source ~/.mongorc && mongod -f mongodb.conf && sleep 5 \
+#     && ./mongo_admin.sh && sleep 2 && ./mongo_xtest.sh && sleep 2
 
 # Nginx
 
@@ -75,6 +75,8 @@ RUN rm -rf /xtest-server-base /dtlib /node-v$NODE_VERSION* /mongodb-linux* /mong
 
 # Start
 
-ADD start.sh start.sh
+COPY start.sh start.sh
 
 ENTRYPOINT ["/start.sh"]
+
+CMD cd /xtest-server && python start.py
