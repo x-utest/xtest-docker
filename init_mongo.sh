@@ -1,3 +1,9 @@
+#!/bin/bash
+
+mongod -f mongodb.conf
+
+sleep 5
+
 mongo admin --eval 'db.createUser({
 user:"admin",
 pwd:"admin",
@@ -6,8 +12,9 @@ role:"userAdminAnyDatabase",
 db:"admin"
 }]
 });
-db.auth("admin", "admin");' \
-&& mongo xtest --eval 'db.createUser({
+db.auth("admin", "admin");'
+
+mongo xtest --eval 'db.createUser({
 user:"xtest",
 pwd:"xtest@2018",
 roles:[{

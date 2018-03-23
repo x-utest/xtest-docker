@@ -1,7 +1,4 @@
 FROM ubuntu:16.04
-MAINTAINER ShinYeung "ityoung@foxmail.com"
-
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 # Install Python
 
@@ -20,63 +17,56 @@ ENV NODE_VERSION 8.10.0
 
 RUN wget https://npm.taobao.org/mirrors/node/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz
 RUN mkdir /usr/local/lib/nodejs
-RUN tar -xJvf node-v$NODE_VERSION-linux-x64.tar.xz -C /usr/local/lib/nodejs
+RUN tar -xJvf node-v$NODE_VERSION-linux-x64.tar.xz -C /usr/local/lib/nodejs && rm -rf /node-v$NODE_VERSION*
 RUN mv /usr/local/lib/nodejs/node-v$NODE_VERSION-linux-x64 /usr/local/lib/nodejs/node-v$NODE_VERSION
-RUN echo 'export NODEJS_HOME=/usr/local/lib/nodejs/node-v$NODE_VERSION' >> ~/.noderc
-RUN echo 'export PATH=$NODEJS_HOME/bin:$PATH' >> ~/.noderc
+ENV PATH=/usr/local/lib/nodejs/node-v$NODE_VERSION/bin:$PATH
 
 # front-end
 
 RUN mkdir /www && cd /www && git clone https://github.com/x-utest/xtest-web.git
 COPY config.js /www/xtest-web/src/config.js
-RUN source ~/.noderc && cd /www/xtest-web && npm install && npm run build
+RUN cd /www/xtest-web && npm install && npm run build
 
 # back-end
 
 RUN git clone https://github.com/our-dev/dtlib.git && \
-    cd dtlib && ./install.sh
+    cd dtlib && ./install.sh && rm -rf /dtlib
 RUN git clone https://github.com/x-utest/xtest-server-base.git && \
-    cd xtest-server-base && ./install.sh
+    cd xtest-server-base && ./install.sh && rm -rf /xtest-server-base
 RUN git clone https://github.com/x-utest/xtest-server.git && \
     cd xtest-server && pip3 install -r requirements.txt
 
-# MongoDB
-
-ENV MONGO_VERSION 3.2.7
-
-RUN wget http://downloads.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1604-$MONGO_VERSION.tgz
-RUN tar -zxvf mongodb-linux-x86_64-ubuntu1604-$MONGO_VERSION.tgz
-RUN mkdir -p mongodb
-RUN cp -R -n mongodb-linux-x86_64-ubuntu1604-$MONGO_VERSION/ mongodb
-RUN mv mongodb /usr/local/lib/
-
-RUN echo 'export PATH=/usr/local/lib/mongodb/mongodb-linux-x86_64-ubuntu1604-$MONGO_VERSION/bin:$PATH' >> ~/.bashrc
-RUN echo 'export PATH=/usr/local/lib/mongodb/mongodb-linux-x86_64-ubuntu1604-$MONGO_VERSION/bin:$PATH' >> ~/.mongorc
-# RUN source ~/.bashrc
-
-RUN mkdir -p /data/db
-COPY mongodb.conf mongodb.conf
-# ADD mongo_admin.sh mongo_admin.sh
-# ADD mongo_xtest.sh mongo_xtest.sh
-
-# RUN source ~/.mongorc && mongod -f mongodb.conf && sleep 5 \
-#     && ./mongo_admin.sh && sleep 2 && ./mongo_xtest.sh && sleep 2
-
-# Nginx
+# Install Nginx
 
 RUN apt-get install nginx -y
 RUN cd /etc/nginx/conf.d/ && ln -s /xtest-server/nginx_config/* .
 
+# Install MongoDB.
+ENV MONGO_VERSION 3.2.7
+
+RUN \
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927 && \
+  echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list && \
+  apt-get update && \
+  apt-get install -y mongodb-org=$MONGO_VERSION \
+  mongodb-org-server=$MONGO_VERSION \
+  mongodb-org-shell=$MONGO_VERSION \
+  mongodb-org-mongos=$MONGO_VERSION \
+  mongodb-org-tools=$MONGO_VERSION && \
+  rm -rf /var/lib/apt/lists/*
+
+COPY mongodb.conf /data/mongodb.conf
+COPY start.sh /data/start.sh
+COPY init_mongo.sh /data/init_mongo.sh
+
+# Define mountable directories.
+VOLUME ["/data/db"]
+
+# Define working directory.
+WORKDIR /data
+
+# Define default command.
+#ENTRYPOINT ["mongod", "-f", "mongodb.conf"]
+CMD ["./start.sh"]
+
 EXPOSE 8009 8099
-
-# Clear
-
-RUN rm -rf /xtest-server-base /dtlib /node-v$NODE_VERSION* /mongodb-linux* /mongo_*
-
-# Start
-
-COPY start.sh start.sh
-
-ENTRYPOINT ["/start.sh"]
-
-CMD cd /xtest-server && python start.py

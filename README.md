@@ -10,6 +10,7 @@ Try run a Docker container to run XTest system easily!
 1. clone this project;
 
 2. change some configuration in this project:
+
 - change the ipadress to your **host IP** in the first line of `config.json`;
 - Unless you have a strong reason to, **don't** change other configurations, or you have to change some code in `xtest-server` and `Dockerfile` .
 
@@ -21,14 +22,26 @@ docker build -t xtest:1.0 .
 
 to build xtest Docker image;
 
-4. run
+4. create a volume in your host
 
 ```
-docker run -p 8009:8009 -p 8099:8099 -it xtest:1.0
+docker volume create xtest-data
 ```
 
-to start xtest system;
+5. first run, you need to initialize your mongodb with command:
 
-5. visit xtest system through `HOST_IP:8009`;
+```
+docker run -v xtest-data/data/db -it xtest:1.0 ./init_mongo.sh
+```
 
-6. ENJOY IT!
+6. after you initialize mongodb, you can start xtest:
+
+```
+docker run -p 8009:8009 -p 8099:8099 -v xtest-data/data/db -it xtest:1.0
+```
+
+> you can customize your web entry port `8099`, while you need to keep api port as `8009`.
+
+7. visit xtest system through `HOST_IP:8009`;
+
+8. ENJOY IT!
