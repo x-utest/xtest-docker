@@ -23,3 +23,5 @@ db:"xtest"
 }]
 });
 db.auth("xtest", "xtest@2018");'
+
+sleep 5 && echo "Initialized!"
