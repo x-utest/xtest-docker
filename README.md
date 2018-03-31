@@ -24,19 +24,19 @@ docker build -t xtest:1.0 .
 4. 在宿主机上创建 docker 卷，用于 MongoDB 数据持久化
 
 ```
-docker volume create xtest-data
+docker volume create --name xtest-data
 ```
 
 5. 上述步骤均完成后，第一次运行 xtest 容器需要先进行初始化 MongoDB，执行如下命令：
 
 ```
-docker run -v xtest-data/data/db -it xtest:1.0 ./init_mongo.sh
+docker run -v xtest-data:/data/db -it xtest:1.0 ./init_mongo.sh
 ```
 
 6. 在完成初始化 MongoDB 后，以后需要运行 xtest 容器时执行如下命令：
 
 ```
-docker run -p 8009:8009 -p 8099:8099 -v xtest-data/data/db -it xtest:1.0
+docker run -p 8009:8009 -p 8099:8099 -v xtest-data:/data/db -it xtest:1.0
 ```
 
 > 该命令中，`8099` 端口为浏览器访问端口，若修改该端口，则步骤7也需要修改。例如你希望访问`HOST_IP:1234`，则将本步骤中 `-p 8099:8099` 修改为 `-p 1234:8099`；
