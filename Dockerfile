@@ -1,7 +1,6 @@
 FROM python:3.5
 
 # back-end
-
 RUN git clone https://github.com/x-utest/xtest-server.git && \
     cd xtest-server && pip3 install -r requirements.txt
 
@@ -9,7 +8,6 @@ RUN git clone https://github.com/x-utest/xtest-server.git && \
 ENV DOCKER 1
 
 # Install Nginx
-
 RUN apt-get update && apt-get install nginx -y
 RUN cd /etc/nginx/conf.d/ && ln -s /xtest-server/nginx_config/* .
 
